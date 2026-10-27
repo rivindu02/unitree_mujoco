@@ -1,3 +1,21 @@
+# ROS 2 Go2 integration (this fork)
+
+This fork of [Unitree Robotics' `unitree_mujoco`](https://github.com/unitreerobotics/unitree_mujoco) adds a ROS 2 interface to the C++ Go2 simulator. The upstream simulator instructions and supported robot details remain below.
+
+- Teleoperate with `geometry_msgs/msg/Twist` on `/cmd_vel`.
+- Publish simulated 4,000-ray LiDAR clouds on `/lidar_points`, IMU orientation on `/imu/data`, and simulation time on `/clock`.
+- Start KISS-ICP using `custom_kiss.launch.py` with simulated time enabled.
+
+The integration targets ROS 2 Humble and requires `rclcpp`, `geometry_msgs`, `sensor_msgs`, `rosgraph_msgs`, and KISS-ICP alongside the upstream MuJoCo and Unitree SDK 2 dependencies. Build the C++ simulator using the upstream steps below, after sourcing ROS 2 and the Unitree SDK environment. Start the Go2 simulator, then launch mapping from a ROS 2 workspace containing this package and KISS-ICP:
+
+```bash
+ros2 launch unitree_mujoco custom_kiss.launch.py
+```
+
+A compatible Go2 controller/policy must be provided separately. This repository does not redistribute controller weights, SDK binaries, or other runtime assets. The upstream BSD 3-Clause license is retained; see [`LICENSE`](LICENSE).
+
+---
+
 # Introduction
 ## Unitree mujoco
 `unitree_mujoco` is a simulator developed based on `Unitree sdk2` and `mujoco`. Users can easily integrate the control programs developed with `Unitree_sdk2`, `unitree_ros2`, and `unitree_sdk2_python` into this simulator, enabling a seamless transition from simulation to physical development. The repository includes two versions of the simulator implemented in C++ and Python, with a structure as follows:
@@ -189,14 +207,14 @@ JOYSTICK_DEVICE = 0 # Joystick number
 ENABLE_ELASTIC_BAND = False
 # Simulation time step (unit: s)
 # To ensure the reliability of the simulation, it needs to be greater than the time required for viewer.sync() to render once
-SIMULATE_DT = 0.003  
+SIMULATE_DT = 0.003
 # Visualization interface runtime step, 0.02 corresponds to 50fps/s
 VIEWER_DT = 0.02
 ```
 ### Joystick
 The simulator will use an Xbox or Switch gamepad  to simulate the wireless controller of the robot. The button and joystick information of the wireless controller will be published through "rt/wireless_controller" topic. `use_joystick/USE_JOYSTICK` in `config.yaml/config.py` needs to be set to 0, when there is no gamepad. If your gamepad is not in Xbox or Switch layout, you can modify it in the source code (The button and joystick IDs can be  determined  using `jstest`):
 
-In `simulate/src/unitree_sdk2_bridge/unitree_sdk2_bridge.cc`: 
+In `simulate/src/unitree_sdk2_bridge/unitree_sdk2_bridge.cc`:
 ```C++
  if (js_type == "xbox")
 {
@@ -220,7 +238,7 @@ In `simulate/src/unitree_sdk2_bridge/unitree_sdk2_bridge.cc`:
 }
 ```
 
-In `simulate_python/unitree_sdk2_bridge.py`: 
+In `simulate_python/unitree_sdk2_bridge.py`:
 ```python
 if js_type == "xbox":
     self.axis_id = {
@@ -246,7 +264,7 @@ if js_type == "xbox":
     }
 ```
 
-### Elastic band for humanoid 
+### Elastic band for humanoid
 Consider humanoid robots are not suitable for starting in ground, a virtual elastic band was designed to simulate the lifting and lowering of humanoid robots. Setting ` enable_elastic_mand/ENABLE_ELSTIC_BAND=1 ` can enable the virtual elastic band. After loading the robot, press' 9 'to activate or release the strap, press' 7' to lower the robot, and press' 8 'to lift the robot.
 
 ## 2. Terrain Generation Tool
@@ -275,12 +293,12 @@ make -j4
 3. Sim to Real
 ```cpp
 if (argc < 2)
-{   
+{
     // If no network card is input, use the simulated domain id and the local network card
     ChannelFactory::Instance()->Init(1, "lo");
 }
 else
-{   
+{
     // Otherwise, use the specified network card
     ChannelFactory::Instance()->Init(0, argv[1]);
 }
