@@ -15,6 +15,7 @@
 #include "physics_joystick.h"
 
 #define MOTOR_SENSOR_NUM 3
+extern std::shared_ptr<unitree::common::UnitreeJoystick> g_external_joystick;
 
 class UnitreeSDK2BridgeBase
 {
@@ -26,7 +27,10 @@ public:
         if(param::config.print_scene_information == 1) {
             printSceneInformation();
         }
-        if(param::config.use_joystick == 1) {
+		if (g_external_joystick) {
+			joystick = g_external_joystick;
+		}
+		else if(param::config.use_joystick == 1) {
             if(param::config.joystick_type == "xbox") {
                 joystick = std::make_shared<XBoxJoystick>(param::config.joystick_device, param::config.joystick_bits);
             } else if(param::config.joystick_type == "switch") {

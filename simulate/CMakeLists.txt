@@ -12,6 +12,10 @@ endif()
 list(APPEND CMAKE_PREFIX_PATH "/opt/unitree_robotics/lib/cmake")
 find_package(unitree_sdk2 REQUIRED)
 find_package(Boost REQUIRED COMPONENTS program_options)
+find_package(rclcpp REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(rosgraph_msgs REQUIRED)
 
 
 include_directories(
@@ -43,5 +47,6 @@ link_libraries(
 )
 
 add_executable(unitree_mujoco ${SIM_SRC} src/main.cc)
+ament_target_dependencies(unitree_mujoco rclcpp geometry_msgs sensor_msgs rosgraph_msgs)
 
 add_executable(jstest src/joystick/jstest.cc src/joystick/joystick.cc)

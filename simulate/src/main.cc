@@ -34,6 +34,8 @@
 #include "array_safety.h"
 #include "unitree_sdk2_bridge.h"
 #include "param.h"
+#include "ros2_sensor_bridge.hpp"
+#include "ros2_virtual_joystick.hpp"
 
 #define MUJOCO_PLUGIN_DIR "mujoco_plugin"
 
@@ -84,6 +86,8 @@ public:
 };
 inline ElasticBand elastic_band;
 
+std::shared_ptr<unitree::common::UnitreeJoystick> g_external_joystick = nullptr;
+
 
 namespace
 {
@@ -101,6 +105,9 @@ namespace
 
   // control noise variables
   mjtNum *ctrlnoise = nullptr;
+  std::shared_ptr<Ros2SensorBridge> sensor_node = nullptr;
+  std::shared_ptr<Ros2VirtualJoystick> virtual_joystick = nullptr;
+  int g_step_counter = 0;
 
   using Seconds = std::chrono::duration<double>;
 
@@ -463,6 +470,8 @@ namespace
               // run single step, let next iteration deal with timing
               mj_step(m, d);
               stepped = true;
+              ++g_step_counter;
+              if (sensor_node) sensor_node->process_step(m, d, g_step_counter);
             }
 
             // in-sync: step until ahead of cpu
@@ -504,6 +513,8 @@ namespace
                 // call mj_step
                 mj_step(m, d);
                 stepped = true;
+                ++g_step_counter;
+                if (sensor_node) sensor_node->process_step(m, d, g_step_counter);
 
                 // break if reset
                 if (d->time < prevSim)
@@ -691,6 +702,19 @@ int main(int argc, char **argv)
   auto sim = std::make_unique<mj::Simulate>(
     std::make_unique<mj::GlfwAdapter>(),
     &cam, &opt, &pert, /* is_passive = */ false);
+
+  rclcpp::init(argc, argv);
+  sensor_node = std::make_shared<Ros2SensorBridge>();
+  virtual_joystick = std::make_shared<Ros2VirtualJoystick>();
+  g_external_joystick = virtual_joystick;
+
+  std::thread ros2_spin_thread([]() {
+    rclcpp::executors::MultiThreadedExecutor exec;
+    exec.add_node(sensor_node);
+    exec.add_node(virtual_joystick);
+    exec.spin();
+  });
+  ros2_spin_thread.detach();
 
   std::thread unitree_thread(UnitreeSdk2BridgeThread, nullptr);
 
